@@ -1,4 +1,17 @@
 #!/bin/bash
+# ====================================================================================================
+# Sign & Say - Smart Home Mobility Project
+# Author: Umit D. Sami
+# Open source project - ExecuTorch Hackathon 2026 (San Francisco) - 11.18.2026
+#
+# This is a smart home mobility project for physically challenged individuals. The project is an IoT
+# system running on the Arduino VENTUNO Q without the use of any cloud resources (everything runs inside
+# the device, including advanced AI computation tasks such as speech and vision recognition).
+# The project allows a physically challenged person to set the temperature in the house, turn the lights
+# on and off, and change TV channels in two ways:
+#   1. VENTUNO Q Voice AI assistant module
+#   2. VENTUNO Q Hand Recognition with ExecuTorch running in the device
+# ====================================================================================================
 # Installs the Ventuno Home UI as a per-user launchd agent. It starts at login, waits for the
 # VENTUNO Q on USB, then serves http://127.0.0.1:9999 and opens it in the browser.
 #   ./install.sh            install / update
