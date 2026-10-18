@@ -2,7 +2,7 @@
 
 **Control your home with your voice and your hands — fully offline, on the edge.**
 
-Sign & Say runs a smart-home controller for **lighting, temperature and TV** on an
+Hey Ardy runs a smart-home controller for **lighting, temperature and TV** on an
 **Arduino VENTUNO Q** (Qualcomm QCS8275). Real-time hand tracking and gesture recognition run on the board's
 **Qualcomm Hexagon NPU** through **ExecuTorch**, and "Hey Arduino" voice commands are recognized on-device with
 **Whisper**. No cloud, no internet needed for the AI. A laptop browser shows the live home dashboard.
@@ -10,7 +10,7 @@ Sign & Say runs a smart-home controller for **lighting, temperature and TV** on 
 Built for the ExecuTorch Hackathon SF 2026, with mobility and accessibility in mind: people who can't easily reach
 switches or remotes can control their home with a short phrase, a thumb gesture, or both.
 
-![Sign & Say architecture](Documentation/architecture_diagram.png)
+![Hey Ardy architecture](Documentation/architecture_diagram.png)
 
 ---
 
@@ -39,7 +39,7 @@ TV is off shows a "TV is off" message.
 |---|---|
 | **Logitech USB camera** (plugged into the board) | Video for hand tracking + microphone for voice |
 | **Arduino VENTUNO Q** | Runs everything: camera capture, NPU hand tracking, gestures, wake word, Whisper speech recognition, command parsing, home state |
-| **Laptop browser** | Shows the "Sign & Say" house dashboard at `http://127.0.0.1:9999`, connected to the board over USB-C |
+| **Laptop browser** | Shows the "Hey Ardy" house dashboard at `http://127.0.0.1:9999`, connected to the board over USB-C |
 
 **Hand pipeline (NPU via ExecuTorch):** MediaPipe palm detector → hand landmark model (21 3D keypoints) → face
 filter → smoothing → rule-based 👍 / 👎 classifier. The models were exported from PyTorch with ExecuTorch's
