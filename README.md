@@ -1,4 +1,4 @@
-# Sign & Say — Smart Home Mobility Project
+# Hey Ardy
 
 **Control your home with your voice and your hands — fully offline, on the edge.**
 
