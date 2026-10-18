@@ -1,0 +1,14 @@
+.DS_Store
+__pycache__/
+*.pyc
+
+# Upstream Arduino example download (contains files over GitHub's 100 MB limit)
+third_party/
+
+# Live camera photos and voice recordings
+camera_test/
+results/live_snapshot.jpg
+results/mic_test.wav
+results/voice_test/
+results/step1/reference/camera_frame_*.jpg
+results/step2/live_tracker_test.jpg

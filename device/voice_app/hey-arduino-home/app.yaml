@@ -1,0 +1,7 @@
+name: Hey Arduino Home
+description: Say "Hey Arduino" or "Hey Ardy" then a command (lights on/off, temperature, TV channel). Keyword spotting + Whisper ASR on the NPU, applied to the Ventuno home server.
+ports: []
+bricks:
+- arduino:asr: {}
+- arduino:keyword_spotting: {}
+icon: 🏠

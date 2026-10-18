@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign &amp; Say</title>
+<style>
+  :root {
+    --sky-top: #0f1b2d; --sky-bottom: #1f3550;
+    --wall: #f4ede1; --wall-edge: #d9ccb6; --roof: #b4472f; --roof-dark: #8e3622;
+    --room: #fffaf2; --room-border: #cdbb9c; --ink: #2b2a28; --muted: #8a7f6e;
+    --accent: #e0a526; --cool: #3f8fd2; --ok: #3cb371; --bad: #d9534f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--ink); background: linear-gradient(var(--sky-top), var(--sky-bottom) 70%, #2d4a2b 70%, #23391f);
+    display: flex; flex-direction: column; align-items: center; padding: 24px 16px 40px;
+  }
+  .status {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 14px; align-items: center; color: #dfe7f1;
+    font-size: 13px; margin-bottom: 14px;
+  }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
+          background: rgba(255,255,255,.08); white-space: nowrap; }
+  .dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--bad); }
+  .dot.on { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+  .dot.listening { background: var(--cool); box-shadow: 0 0 8px var(--cool); animation: pulse .8s ease-in-out infinite; }
+  @keyframes pulse { 50% { transform: scale(1.6); } }
+  .pill.voice { max-width: 520px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background .3s; }
+  .pill.voice.done { background: rgba(60,179,113,.35); }
+  .pill.voice.failed { background: rgba(217,83,79,.35); }
+  .room.temperature.off { filter: grayscale(.8); opacity: .75; }
+  .room.changed { animation: changed 1.6s ease-out; }
+  @keyframes changed { 0%, 30% { box-shadow: 0 0 0 4px var(--cool), 0 0 24px rgba(63,143,210,.8); } }
+  .voice-tag {
+    position: absolute; top: 10px; right: 10px; font-size: 11px; font-weight: 700; color: #fff; background: var(--cool);
+    padding: 2px 8px; border-radius: 3px; opacity: 0; transition: opacity .3s;
+  }
+  .room.changed .voice-tag.show { opacity: 1; }
+
+  .house { width: min(1040px, 100%); position: relative; }
+  .roof { position: relative; height: 170px; }
+  .roof svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .roof-title {
+    position: absolute; left: 50%; top: 96px; transform: translateX(-50%);
+    color: #fff4e6; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: 18px;
+    text-shadow: 0 1px 2px rgba(0,0,0,.35); text-align: center; white-space: nowrap; line-height: 1.25;
+  }
+  .roof-subtitle {
+    display: block; font-size: 12px; font-weight: 500; letter-spacing: .06em; text-transform: none; opacity: .9;
+  }
+  /* Smoke puffs rising from the chimney top (x 798 / 1040 of the roof drawing). */
+  .smoke { position: absolute; left: 75.9%; top: 8px; width: 0; height: 0; pointer-events: none; }
+  .smoke span {
+    position: absolute; left: -11px; top: -11px; width: 22px; height: 22px; border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, rgba(235,235,235,.85), rgba(190,190,190,.35) 70%, transparent);
+    filter: blur(1.5px); opacity: 0; animation: smoke-rise 4.8s ease-out infinite;
+  }
+  .smoke span:nth-child(2) { animation-delay: 1.2s; }
+  .smoke span:nth-child(3) { animation-delay: 2.4s; }
+  .smoke span:nth-child(4) { animation-delay: 3.6s; }
+  @keyframes smoke-rise {
+    0%   { transform: translate(0, 0) scale(.45); opacity: 0; }
+    12%  { opacity: .85; }
+    50%  { transform: translate(10px, -34px) scale(1.3); opacity: .55; }
+    100% { transform: translate(26px, -70px) scale(2.1); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .smoke span { animation: none; } }
+  .body {
+    background: var(--wall); border: 4px solid var(--wall-edge); border-top: none;
+    padding: 18px; display: grid; gap: 18px; grid-template-columns: repeat(3, 1fr);
+    box-shadow: 0 20px 40px rgba(0,0,0,.35);
+  }
+  .floor-line { grid-column: 1 / -1; height: 6px; background: var(--wall-edge); margin: 0 -18px; }
+  .room {
+    background: var(--room); border: 3px solid var(--room-border); border-radius: 6px; padding: 14px;
+    position: relative; min-height: 190px; transition: background .3s, box-shadow .3s;
+  }
+  .room.camera { grid-column: 1 / -1; min-height: auto; }
+  .label { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; letter-spacing: .03em; }
+  .label svg { width: 24px; height: 24px; flex: none; }
+  .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+  .video-wrap {
+    margin-top: 10px; position: relative; aspect-ratio: 16 / 9; background: #111; border-radius: 4px; overflow: hidden;
+    border: 2px solid #2b2a28;
+  }
+  .video-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .video-overlay {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: #bbb; font-size: 14px; background: #111;
+  }
+  .video-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  #tv-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; display: none; }
+  .video-wrap.tv-on #tv-video { display: block; }
+  .video-wrap.tv-on .live-badge, .video-wrap.tv-on .hands-badge { display: none !important; }
+  .tv-badge {
+    position: absolute; top: 8px; left: 8px; background: rgba(44,111,181,.92); color: #fff; font-size: 12px;
+    font-weight: 700; padding: 3px 10px; border-radius: 3px; display: none;
+  }
+  .video-wrap.tv-on .tv-badge { display: block; }
+  .tv-sound {
+    position: absolute; bottom: 12px; right: 12px; background: rgba(0,0,0,.7); color: #fff; border: 1px solid #fff;
+    font-weight: 600;
+  }
+  .tv-sound:hover { background: rgba(0,0,0,.85); }
+  .tv-status {
+    position: absolute; inset: 0; display: none; align-items: center; justify-content: center; color: #ddd;
+    font-size: 14px; pointer-events: none;
+  }
+  .video-wrap.tv-on .tv-status.show { display: flex; }
+  .gesture-badge {
+    position: absolute; top: 14px; left: 50%; transform: translateX(-50%); background: rgba(60,179,113,.95);
+    color: #fff; font-size: 22px; font-weight: 700; padding: 8px 20px 10px; border-radius: 8px; display: none;
+    box-shadow: 0 4px 16px rgba(0,0,0,.35); text-align: center; min-width: 190px;
+  }
+  .gesture-badge.show { display: block; animation: pop .25s ease-out; }
+  .gesture-badge.thumbs_down { background: rgba(217,83,79,.95); }
+  @keyframes pop { from { transform: translateX(-50%) scale(.7); opacity: 0; } }
+  .gesture-badge .bar { height: 4px; margin-top: 6px; border-radius: 2px; background: rgba(255,255,255,.9);
+                        transform-origin: left; }
+  .dot.gesture { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  .hands-badge {
+    position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,.6); color: #fff; font-size: 11px;
+    padding: 3px 8px; border-radius: 3px; font-variant-numeric: tabular-nums; display: none;
+  }
+  .label .toggle { margin-left: auto; font-size: 12px; font-weight: 600; padding: 4px 10px; }
+  .toggle.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .live-badge {
+    position: absolute; top: 8px; left: 8px; background: rgba(217,83,79,.9); color: #fff; font-size: 11px;
+    font-weight: 700; padding: 2px 8px; border-radius: 3px; letter-spacing: .08em; display: none;
+  }
+
+  .big { font-size: 34px; font-weight: 700; margin: 14px 0 6px; }
+  .temps { display: flex; align-items: stretch; gap: 16px; margin-top: 10px; }
+  .temps .big { margin: 2px 0 6px; white-space: nowrap; }
+  .temps .big.target { color: var(--cool); }
+  .temp-bar { width: 3px; border-radius: 2px; background: var(--room-border); }
+  .row { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  button {
+    font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--room-border);
+    background: #fff; cursor: pointer;
+  }
+  button:hover { background: #f6efe3; }
+  button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+
+  .room.lighting.on { background: #fff6d6; box-shadow: inset 0 0 40px rgba(224,165,38,.35); }
+  .room.lighting.on .bulb-fill { fill: var(--accent); }
+  .room.tv .screen {
+    margin-top: 12px; height: 84px; border-radius: 4px; background: #222; border: 3px solid #444; position: relative;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    color: #666; font-size: 13px; overflow: hidden;
+  }
+  .room.tv.on .screen { background: linear-gradient(135deg, #2c6fb5, #7ac0e8); color: #fff; }
+  .tv-ch { font-size: 20px; font-weight: 700; }
+  .tv-name { font-size: 13px; opacity: .9; }
+  .tv-watch { color: #fff; font-size: 11px; font-weight: 600; text-decoration: none; padding: 1px 8px;
+              border: 1px solid rgba(255,255,255,.7); border-radius: 999px; }
+  .tv-watch:hover { background: rgba(255,255,255,.2); }
+  .tv-notice {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 18px;
+    font-weight: 700; color: #fff; background: rgba(217,83,79,.92); opacity: 0; pointer-events: none;
+  }
+  .tv-notice.show { animation: notice 2.5s ease-out; }
+  @keyframes notice { 0%, 10% { opacity: 0; } 15%, 75% { opacity: 1; } 100% { opacity: 0; } }
+  .lineup { display: flex; gap: 6px; margin-top: 8px; }
+  .lineup button { flex: 1; padding: 4px 6px; font-size: 12px; }
+  .lineup button.active { background: var(--cool); border-color: var(--cool); color: #fff; }
+  .grass { width: min(1100px, 100%); height: 14px; background: #3b6a33; border-radius: 0 0 8px 8px; }
+
+  @media (max-width: 600px) { .body { grid-template-columns: 1fr; } .room.camera { grid-column: auto; } }
+</style>
+</head>
+<body>
+  <div class="status">
+    <span class="pill"><span id="dev-dot" class="dot"></span><span id="dev-text">VENTUNO Q: checking…</span></span>
+    <span class="pill"><span id="cam-dot" class="dot"></span><span id="cam-text">Camera: –</span></span>
+    <span class="pill"><span id="gesture-dot" class="dot on"></span><span id="gesture-text">Gesture: none</span></span>
+    <span class="pill voice" id="voice-pill"><span id="voice-dot" class="dot"></span><span id="voice-text">Voice: –</span></span>
+  </div>
+
+  <div class="house">
+    <div class="roof">
+      <svg viewBox="0 0 1040 170" preserveAspectRatio="none" aria-hidden="true">
+        <rect x="770" y="20" width="56" height="90" fill="#7a5a48" stroke="#5d4436" stroke-width="3"/>
+        <rect x="764" y="12" width="68" height="14" fill="#5d4436"/>
+        <polygon points="-16,170 520,8 1056,170" fill="var(--roof)" stroke="var(--roof-dark)" stroke-width="6" stroke-linejoin="round"/>
+        <polygon points="40,170 520,30 1000,170" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="3"/>
+        <circle cx="520" cy="68" r="20" fill="#fdf3dc" stroke="var(--roof-dark)" stroke-width="5"/>
+        <line x1="520" y1="48" x2="520" y2="88" stroke="var(--roof-dark)" stroke-width="3"/>
+        <line x1="500" y1="68" x2="540" y2="68" stroke="var(--roof-dark)" stroke-width="3"/>
+      </svg>
+      <div class="smoke" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <div class="roof-title">Sign &amp; Say<span class="roof-subtitle">(Smart Home Mobility Project)</span></div>
+    </div>
+
+    <div class="body">
+      <section class="room camera">
+        <div class="label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          Live Camera <span class="sub" id="cam-meta" style="margin-left:6px"></span>
+          <button class="toggle active" id="skeleton-toggle" title="Show the hand skeleton tracked on the board's NPU">Hand skeleton: on</button>
+        </div>
+        <div class="video-wrap" id="video-wrap">
+          <img id="video" alt="Logitech camera live feed">
+          <canvas id="skeleton"></canvas>
+          <div class="video-overlay" id="video-overlay">Waiting for camera…</div>
+          <div class="live-badge" id="live-badge">LIVE</div>
+          <div class="hands-badge" id="hands-badge"></div>
+          <video id="tv-video" playsinline></video>
+          <div class="tv-status" id="tv-status"></div>
+          <div class="tv-badge" id="tv-badge"></div>
+          <button class="tv-sound" id="tv-sound" hidden>🔇 Click for sound</button>
+          <div class="gesture-badge" id="gesture-badge"><span id="gesture-name"></span><div class="bar" id="gesture-bar"></div></div>
+        </div>
+      </section>
+
+      <div class="floor-line"></div>
+
+      <section class="room lighting" id="room-lighting">
+        <div class="label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path class="bulb-fill" fill="none" d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+          Lighting
+        </div>
+        <div class="sub">Living room lights</div>
+        <div class="big" id="light-state">Off</div>
+        <input type="range" id="light-brightness" min="0" max="100" step="5">
+        <div class="row">
+          <button class="primary" id="light-toggle">Turn on</button>
+          <span class="sub" id="light-pct"></span>
+        </div>
+      </section>
+
+      <section class="room temperature" id="room-temperature">
+        <div class="label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/><circle cx="11.5" cy="17.5" r="1.5" fill="currentColor"/></svg>
+          Temperature
+        </div>
+        <div class="sub">Thermostat</div>
+        <div class="temps">
+          <div><div class="sub">Actual</div><div class="big"><span id="temp-current">–</span>°F</div></div>
+          <div class="temp-bar"></div>
+          <div><div class="sub">Target</div><div class="big target"><span id="temp-target">–</span>°F</div></div>
+        </div>
+        <div class="sub">Mode <span id="temp-mode">–</span></div>
+        <div class="row">
+          <button class="primary" id="temp-toggle">Turn off</button>
+          <button id="temp-down">− 1°F</button>
+          <button id="temp-up">+ 1°F</button>
+        </div>
+      </section>
+
+      <section class="room tv" id="room-tv">
+        <div class="label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="13" rx="2"/><path d="M17 2l-5 5-5-5"/></svg>
+          TV
+        </div>
+        <div class="sub">Living room TV</div>
+        <div class="screen" id="tv-screen">
+          <div class="tv-ch" id="tv-ch">Off</div>
+          <div class="tv-name" id="tv-name"></div>
+          <a class="tv-watch" id="tv-watch" target="_blank" rel="noopener" hidden>▶ Watch on Pluto TV</a>
+          <div class="tv-notice" id="tv-notice"></div>
+        </div>
+        <div class="lineup" id="tv-lineup"></div>
+        <div class="row">
+          <button class="primary" id="tv-toggle">Turn on</button>
+          <button id="tv-ch-down">CH −</button>
+          <button id="tv-ch-up">CH +</button>
+        </div>
+      </section>
+    </div>
+  </div>
+  <div class="grass"></div>
+
+<script src="/hls.min.js"></script>
+<script>
+  const $ = (id) => document.getElementById(id);
+  let state = null;
+  let eventsLive = false;
+
+  async function api(path, body) {
+    const opts = body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {};
+    const r = await fetch(path, opts);
+    if (!r.ok) throw new Error(r.status);
+    return r.json();
+  }
+
+  function render(s) {
+    state = s;
+    const L = s.lighting, T = s.temperature, V = s.tv;
+    $("room-lighting").classList.toggle("on", L.on);
+    $("light-state").textContent = L.on ? "On" : "Off";
+    $("light-toggle").textContent = L.on ? "Turn off" : "Turn on";
+    $("light-brightness").value = L.brightness;
+    $("light-pct").textContent = `Brightness ${L.brightness}%`;
+    $("temp-current").textContent = T.current.toFixed(1);
+    $("temp-target").textContent = T.target.toFixed(1);
+    $("temp-mode").textContent = T.on ? T.mode : "off";
+    $("temp-toggle").textContent = T.on ? "Turn off" : "Turn on";
+    $("room-temperature").classList.toggle("off", !T.on);
+    renderVoice(s.voice);
+    $("room-tv").classList.toggle("on", V.on);
+    $("tv-toggle").textContent = V.on ? "Turn off" : "Turn on";
+    const channels = s.tv_channels || [], ch = channels.find((c) => c.number === V.channel);
+    $("tv-ch").textContent = V.on ? `Channel ${V.channel}` : "Off";
+    $("tv-name").textContent = V.on && ch ? ch.name : "";
+    $("tv-watch").hidden = !(V.on && ch);
+    if (ch) $("tv-watch").href = ch.url;
+    const lineup = $("tv-lineup");
+    if (lineup.childElementCount !== channels.length) {
+      lineup.replaceChildren(...channels.map((c) => {
+        const b = document.createElement("button");
+        b.textContent = `${c.number} · ${c.name}`;
+        b.title = c.url;
+        b.onclick = () => patch({ tv: { channel: c.number } });
+        return b;
+      }));
+    }
+    [...lineup.children].forEach((b, i) => b.classList.toggle("active", V.on && channels[i].number === V.channel));
+    syncTv(V, ch);
+  }
+
+  // TV on: the channel's live Pluto TV stream plays over the camera window; TV off: back to camera + skeleton.
+  const tvVideo = $("tv-video"), tvSession = crypto.randomUUID();
+  let tvStream = null, hls = null, tvRetry = null;
+  // Pluto's stitcher only serves the real channel with a session token from its boot API (otherwise a
+  // "where to watch" slate).
+  async function plutoUrl(id) {
+    const q = new URLSearchParams({ appName: "web", appVersion: "9.0.0", deviceVersion: "130.0.0", deviceModel: "web",
+      deviceMake: "chrome", deviceType: "web", clientID: tvSession, clientModelNumber: "1.0.0", channelID: id });
+    const boot = await (await fetch(`https://boot.pluto.tv/v4/start?${q}`)).json();
+    return `${boot.servers.stitcher}/v2/stitch/hls/channel/${id}/master.m3u8?${boot.stitcherParams}` +
+      `&jwt=${boot.sessionToken}&masterJWTPassthrough=true`;
+  }
+  function tvStatus(text) {
+    $("tv-status").textContent = text;
+    $("tv-status").classList.toggle("show", !!text);
+  }
+  async function playTv() {
+    tvVideo.muted = false;
+    try {
+      await tvVideo.play();
+      $("tv-sound").hidden = true;
+    } catch {
+      // Browsers block sound until the page has been clicked; voice-started channels begin muted then.
+      tvVideo.muted = true;
+      $("tv-sound").hidden = false;
+      await tvVideo.play().catch(() => {});
+    }
+  }
+  async function startTv(ch) {
+    if (hls) { hls.destroy(); hls = null; }
+    tvVideo.removeAttribute("src");
+    tvVideo.load();
+    tvStatus(`Tuning to ${ch.name}…`);
+    const retry = () => {
+      tvStatus(`Can't reach ${ch.name} on Pluto TV, retrying…`);
+      clearTimeout(tvRetry);
+      tvRetry = setTimeout(() => { if (tvStream === ch.stream) startTv(ch); }, 4000);
+    };
+    let url;
+    try {
+      url = await plutoUrl(ch.stream);
+    } catch {
+      return retry();
+    }
+    if (tvStream !== ch.stream) return;  // channel changed while tuning
+    if (window.Hls && Hls.isSupported()) {
+      hls = new Hls({ lowLatencyMode: false });
+      hls.on(Hls.Events.ERROR, (_, d) => { if (d.fatal) retry(); });
+      hls.loadSource(url);
+      hls.attachMedia(tvVideo);
+    } else {
+      tvVideo.src = url;  // Safari plays HLS natively
+    }
+    playTv();
+  }
+  tvVideo.onplaying = () => tvStatus("");
+  $("tv-sound").onclick = () => { tvVideo.muted = false; $("tv-sound").hidden = true; tvVideo.play(); };
+  function syncTv(V, ch) {
+    const stream = V.on && ch ? ch.stream : null;
+    tvVideo.volume = Math.max(0, Math.min(1, V.volume / 100));
+    if (stream === tvStream) return;
+    tvStream = stream;
+    clearTimeout(tvRetry);
+    $("video-wrap").classList.toggle("tv-on", !!stream);
+    if (!stream) {
+      if (hls) { hls.destroy(); hls = null; }
+      tvVideo.pause();
+      tvVideo.removeAttribute("src");
+      tvVideo.load();
+      tvStatus("");
+      $("tv-sound").hidden = true;
+      resumeCamera();
+      return;
+    }
+    stopCamera();
+    $("tv-badge").textContent = `📺 Channel ${ch.number} · ${ch.name}`;
+    startTv(ch);
+  }
+
+  function showTvNotice(text) {
+    const n = $("tv-notice");
+    n.textContent = text;
+    n.classList.remove("show");
+    void n.offsetWidth;  // restart the animation
+    n.classList.add("show");
+  }
+
+  // Voice commands run on the board ("Hey Arduino" app); the UI shows what it heard and did.
+  let lastVoiceT = 0, voiceFlashUntil = 0;
+  function renderVoice(v) {
+    const pill = $("voice-pill"), dot = $("voice-dot"), text = $("voice-text");
+    if (!v || v.status === "offline") {
+      dot.className = "dot";
+      text.textContent = "Voice: app not running on the board";
+      pill.classList.remove("done", "failed");
+      return;
+    }
+    if (v.t !== lastVoiceT && (v.status === "done" || v.status === "failed")) voiceFlashUntil = Date.now() + 4000;
+    lastVoiceT = v.t;
+    const flashing = Date.now() < voiceFlashUntil;
+    pill.classList.toggle("done", flashing && v.ok === true);
+    pill.classList.toggle("failed", flashing && v.ok === false);
+    dot.className = v.status === "listening" || v.status === "waiting" ? "dot listening" : "dot on";
+    if (v.status === "listening") text.textContent = "Voice: listening… say a command";
+    else if (v.status === "waiting") text.textContent = `Voice: “${v.heard}” → ${v.result} (3 s)`;
+    else if (v.heard || v.result) text.textContent = `Voice: “${v.heard || "…"}” → ${v.result}`;
+    else text.textContent = "Voice: say “Hey Arduino” or “Hey Ardy”";
+  }
+
+  const patch = async (p) => render(await api("/api/state", p));
+  $("temp-toggle").onclick = () => patch({ temperature: { on: !state.temperature.on } });
+  $("light-toggle").onclick = () => patch({ lighting: { on: !state.lighting.on } });
+  $("light-brightness").oninput = (e) => patch({ lighting: { brightness: +e.target.value } });
+  $("temp-up").onclick = () => patch({ temperature: { target: Math.min(86, state.temperature.target + 1) } });
+  $("temp-down").onclick = () => patch({ temperature: { target: Math.max(50, state.temperature.target - 1) } });
+  $("tv-toggle").onclick = () => patch({ tv: { on: !state.tv.on } });
+  const stepChannel = (d) => {
+    const count = (state.tv_channels || []).length || 3;
+    patch({ tv: { channel: (state.tv.channel - 1 + d + count) % count + 1 } });
+  };
+  $("tv-ch-up").onclick = () => stepChannel(1);
+  $("tv-ch-down").onclick = () => stepChannel(-1);
+
+  // Live video: (re)attach the MJPEG stream whenever the board + camera are up.
+  const video = $("video");
+  let streaming = false;
+  function startStream() {
+    if (streaming || tvStream) return;  // the camera stream is paused while the TV plays over it
+    streaming = true;
+    video.src = "/stream.mjpg?t=" + Date.now();
+  }
+  function stopCamera() {
+    streaming = false;
+    video.removeAttribute("src");
+    lastHands = null;
+  }
+  // TV off: fresh camera stream and fresh hand tracking (the board resets its tracker on TV off); hands from
+  // before the reset are ignored so no stale skeleton shows up.
+  function resumeCamera() {
+    stopCamera();
+    minHandsEpoch = lastHandsEpoch + 1;
+    resumedAt = performance.now();
+    $("video-overlay").textContent = "Switching to camera…";
+    $("video-overlay").style.display = "flex";
+    $("live-badge").style.display = "none";
+    $("hands-badge").style.display = "none";
+    startStream();
+    reconnectHands();
+    drawHands();
+  }
+  video.onload = () => { $("video-overlay").style.display = "none"; $("live-badge").style.display = "block"; };
+  video.onerror = () => {
+    streaming = false;
+    $("video-overlay").style.display = "flex";
+    $("live-badge").style.display = "none";
+  };
+
+  let uiVersion = null;
+  async function poll() {
+    try {
+      const st = await api("/api/status");
+      // Open tabs pick up a reinstalled UI on their own.
+      if (uiVersion === null) uiVersion = st.ui_version;
+      else if (st.ui_version && st.ui_version !== uiVersion) return location.reload();
+      const dev = st.device.connected, cam = st.camera && st.camera.ok;
+      $("dev-dot").classList.toggle("on", dev);
+      $("dev-text").textContent = dev ? `VENTUNO Q: connected (${st.device.name || st.device.serial})` : "VENTUNO Q: disconnected";
+      $("cam-dot").classList.toggle("on", !!cam);
+      $("cam-text").textContent = cam ? `Camera: ${st.camera.fps} fps` : (dev ? "Camera: starting…" : "Camera: –");
+      $("cam-meta").textContent = cam ? `Logitech · ${st.camera.size[0]}×${st.camera.size[1]}` : "";
+      if (cam) {
+        startStream();
+        if (video.naturalWidth > 0 && video.getAttribute("src")) {
+          $("video-overlay").style.display = "none";
+          $("live-badge").style.display = "block";
+        }
+      }
+      else {
+        $("video-overlay").textContent = dev ? "Starting camera on the board…" : "Connect the VENTUNO Q over USB";
+        if (!dev) { streaming = false; video.removeAttribute("src"); $("video-overlay").style.display = "flex"; $("live-badge").style.display = "none"; }
+      }
+      // The board pushes state changes over /api/events; fetching here is only a fallback while that's down.
+      if (!dev) renderVoice(null);
+      else if (!eventsLive) {
+        const s = await api("/api/state").catch(() => null);
+        if (s) render(s);
+      }
+    } catch (e) {
+      $("dev-text").textContent = "UI server not reachable";
+    }
+  }
+  poll();
+  setInterval(poll, 1500);
+
+  // Real-time home state: every change on the board (voice command, UI click) arrives here immediately.
+  const ROOMS = { lighting: "room-lighting", temperature: "room-temperature", tv: "room-tv" };
+  let lastSeq = null;
+  function flashRooms(change) {
+    if (change.notice && change.notice.tv) showTvNotice(change.notice.tv);
+    for (const section of change.sections) {
+      const room = $(ROOMS[section]);
+      if (!room) continue;
+      let tag = room.querySelector(".voice-tag");
+      if (!tag) {
+        tag = document.createElement("div");
+        tag.className = "voice-tag";
+        tag.textContent = "🎙 voice";
+        room.appendChild(tag);
+      }
+      tag.textContent = change.source === "voice+gesture" ? "🎙 + ✋ voice & gesture" : "🎙 voice";
+      tag.classList.toggle("show", change.source === "voice" || change.source === "voice+gesture");
+      room.classList.remove("changed");
+      void room.offsetWidth;  // restart the animation
+      room.classList.add("changed");
+      clearTimeout(room._changedTimer);
+      room._changedTimer = setTimeout(() => room.classList.remove("changed"), 2500);
+    }
+  }
+  function connectEvents() {
+    const es = new EventSource("/api/events");
+    es.onopen = () => { eventsLive = true; };
+    es.onmessage = (ev) => {
+      const s = JSON.parse(ev.data);
+      if (lastSeq !== null && s.seq !== lastSeq && s.change) flashRooms(s.change);
+      lastSeq = s.seq;
+      render(s);
+    };
+    es.onerror = () => { eventsLive = false; es.close(); setTimeout(connectEvents, 2000); };
+  }
+  connectEvents();
+
+  // Hand skeleton: keypoints come from the board's NPU tracker as server-sent events and are drawn over the video.
+  const FINGERS = [
+    { chain: [1, 2, 3, 4], color: "#ff6b6b" },        // thumb
+    { chain: [5, 6, 7, 8], color: "#ffd93d" },        // index
+    { chain: [9, 10, 11, 12], color: "#6bcb77" },     // middle
+    { chain: [13, 14, 15, 16], color: "#4d96ff" },    // ring
+    { chain: [17, 18, 19, 20], color: "#c77dff" },    // pinky
+  ];
+  const PALM = [[0, 1], [0, 5], [5, 9], [9, 13], [13, 17], [0, 17]];
+  const TIPS = new Set([4, 8, 12, 16, 20]);
+  const HAND_COLOR = { Left: "#4aa8ff", Right: "#ffad33" };
+  const canvas = $("skeleton"), ctx = canvas.getContext("2d");
+  let showSkeleton = localStorage.getItem("skeleton") !== "off";
+  let lastHands = null, lastHandsAt = 0, lastHandsEpoch = 0, minHandsEpoch = 0, resumedAt = 0;
+
+  function setToggle() {
+    $("skeleton-toggle").classList.toggle("active", showSkeleton);
+    $("skeleton-toggle").textContent = `Hand skeleton: ${showSkeleton ? "on" : "off"}`;
+  }
+  $("skeleton-toggle").onclick = () => {
+    showSkeleton = !showSkeleton;
+    localStorage.setItem("skeleton", showSkeleton ? "on" : "off");
+    setToggle();
+    drawHands();
+  };
+  setToggle();
+
+  function drawHands() {
+    const wrap = $("video-wrap"), dpr = window.devicePixelRatio || 1;
+    const W = wrap.clientWidth, H = wrap.clientHeight;
+    if (canvas.width !== Math.round(W * dpr) || canvas.height !== Math.round(H * dpr)) {
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    const res = lastHands;
+    if (!showSkeleton || !res || !streaming || tvStream || performance.now() - lastHandsAt > 500) return;
+    // Match the <img> object-fit: contain letterboxing.
+    const s = Math.min(W / res.w, H / res.h), ox = (W - res.w * s) / 2, oy = (H - res.h * s) / 2;
+    for (const hand of res.hands) {
+      const p = hand.pts.map(([x, y]) => [ox + x * res.w * s, oy + y * res.h * s]);
+      const size = Math.hypot(p[0][0] - p[9][0], p[0][1] - p[9][1]);
+      const lw = Math.max(2, Math.min(6, size * 0.06)), r = lw * 1.1;
+      ctx.lineCap = ctx.lineJoin = "round";
+      ctx.shadowColor = "rgba(0,0,0,.6)";
+      ctx.shadowBlur = 3;
+      ctx.strokeStyle = HAND_COLOR[hand.label] || "#fff";
+      ctx.lineWidth = lw;
+      ctx.beginPath();
+      for (const [a, b] of PALM) { ctx.moveTo(...p[a]); ctx.lineTo(...p[b]); }
+      ctx.stroke();
+      for (const f of FINGERS) {
+        ctx.strokeStyle = f.color;
+        ctx.beginPath();
+        ctx.moveTo(...p[f.chain[0]]);
+        for (const i of f.chain.slice(1)) ctx.lineTo(...p[i]);
+        ctx.stroke();
+      }
+      ctx.shadowBlur = 0;
+      p.forEach(([x, y], i) => {
+        ctx.beginPath();
+        ctx.arc(x, y, i === 0 ? r * 1.8 : TIPS.has(i) ? r * 1.4 : r, 0, Math.PI * 2);
+        ctx.fillStyle = i === 0 ? (HAND_COLOR[hand.label] || "#fff") : "#fff";
+        ctx.fill();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = "rgba(0,0,0,.7)";
+        ctx.stroke();
+      });
+      const text = `${hand.label} ${Math.round(hand.handedness * 100)}%`;
+      ctx.font = "600 12px -apple-system, system-ui, sans-serif";
+      const tw = ctx.measureText(text).width, tx = p[0][0] - tw / 2 - 6, ty = p[0][1] + r * 2 + 6;
+      ctx.fillStyle = HAND_COLOR[hand.label] || "#333";
+      ctx.fillRect(tx, ty, tw + 12, 18);
+      ctx.fillStyle = "#111";
+      ctx.fillText(text, tx + 6, ty + 13);
+    }
+  }
+
+  // Gesture state comes from the board (gestures.py): set for 3 s after a detection, then back to "none"; a new
+  // gesture (thumbs up -> down) replaces the shown one immediately.
+  const GESTURES = { thumbs_up: "👍 Thumbs up", thumbs_down: "👎 Thumbs down" };
+  let shownGesture = "none";
+  function renderGesture(g) {
+    if (!g) return;
+    const active = g.gesture !== "none", badge = $("gesture-badge");
+    if (active && shownGesture !== g.gesture) {
+      badge.classList.remove("show");
+      void badge.offsetWidth;  // replay the pop-in
+    }
+    badge.classList.toggle("show", active);
+    for (const name of Object.keys(GESTURES)) badge.classList.toggle(name, g.gesture === name);
+    if (active) {
+      $("gesture-name").textContent = GESTURES[g.gesture] || g.gesture;
+      $("gesture-bar").style.transform = `scaleX(${Math.min(1, g.remaining / 3)})`;
+    }
+    shownGesture = g.gesture;
+    $("gesture-dot").className = active ? "dot gesture" : "dot on";
+    $("gesture-text").textContent = active
+      ? `Gesture: ${GESTURES[g.gesture] || g.gesture} (${g.hand || "?"} hand) · ${g.remaining.toFixed(1)} s`
+      : `Gesture: none${g.count ? ` · ${g.count} detected` : ""}`;
+  }
+
+  let handsEs = null, handsMsgAt = 0;
+  function reconnectHands() {
+    if (handsEs) handsEs.close();
+    connectHands();
+  }
+  function connectHands() {
+    const es = handsEs = new EventSource("/api/hands.sse");
+    handsMsgAt = performance.now();
+    es.onmessage = (ev) => {
+      const res = JSON.parse(ev.data);
+      handsMsgAt = performance.now();
+      lastHandsEpoch = Math.max(lastHandsEpoch, res.epoch || 0);
+      renderGesture(res.gesture);
+      // Right after TV off, wait for results from the board's reset tracker (or 1.5 s for an older board server).
+      if ((res.epoch || 0) < minHandsEpoch && performance.now() - resumedAt < 1500) return;
+      lastHands = res;
+      lastHandsAt = performance.now();
+      const b = $("hands-badge");
+      b.style.display = streaming && showSkeleton ? "block" : "none";
+      const npu = lastHands.ms.detect + lastHands.ms.landmarks;
+      b.textContent = `NPU hand tracking · ${lastHands.hands.length} hand${lastHands.hands.length === 1 ? "" : "s"} · ${lastHands.fps} fps · ${npu.toFixed(1)} ms`;
+      requestAnimationFrame(drawHands);
+    };
+    es.onerror = () => {
+      es.close();
+      $("hands-badge").style.display = "none";
+      setTimeout(() => { if (handsEs === es) connectHands(); }, 2000);
+    };
+  }
+  connectHands();
+  // The board sends hands at camera rate; a silent stream means a dead connection.
+  setInterval(() => { if (!tvStream && performance.now() - handsMsgAt > 4000) reconnectHands(); }, 2000);
+  setInterval(drawHands, 250);  // clears stale skeletons when events stop
+  window.addEventListener("resize", drawHands);
+</script>
+</body>
+</html>

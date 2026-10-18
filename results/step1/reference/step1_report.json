@@ -1,0 +1,80 @@
+{
+  "mp_palm_detector": {
+    "params_M": 1.763,
+    "outputs": [
+      [
+        1,
+        2944,
+        18
+      ],
+      [
+        1,
+        2944,
+        1
+      ]
+    ],
+    "torch_cpu_ms": 545.7
+  },
+  "mp_hand_landmark": {
+    "params_M": 2.014,
+    "outputs": [
+      [
+        1
+      ],
+      [
+        1
+      ],
+      [
+        1,
+        21,
+        3
+      ]
+    ],
+    "torch_cpu_ms": 322.7
+  },
+  "rtmpose_hand": {
+    "params_M": 13.775,
+    "outputs": [
+      [
+        1,
+        21,
+        512
+      ],
+      [
+        1,
+        21,
+        512
+      ]
+    ],
+    "torch_cpu_ms": 567.8
+  },
+  "pipeline": {
+    "sample_one_hand": [
+      {
+        "hand": "left",
+        "palm_score": 250.275,
+        "hand_flag": 1.0,
+        "mp_vs_rtm_mean_px": 7.15
+      }
+    ],
+    "sample_two_hands": [
+      {
+        "hand": "right",
+        "palm_score": 489.239,
+        "hand_flag": 1.0,
+        "mp_vs_rtm_mean_px": 7.57
+      },
+      {
+        "hand": "left",
+        "palm_score": 486.541,
+        "hand_flag": 1.0,
+        "mp_vs_rtm_mean_px": 6.9
+      }
+    ],
+    "camera_frame": []
+  },
+  "calibration": {
+    "detector_frames": 74,
+    "hand_crops": 95
+  }
+}

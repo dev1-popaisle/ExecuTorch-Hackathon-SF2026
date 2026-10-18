@@ -1,0 +1,36 @@
+{
+  "kernel": "6.8.0-1084-qcom",
+  "soc": "QCS8275",
+  "htp_arch": "V75",
+  "torch": "2.13.0+cpu",
+  "runners": {
+    "xnnpack": true,
+    "qnn": true
+  },
+  "qairt_packages": [
+    "qairt-dsp-binaries 2.49.0-0ubuntu1~bpo24.04.2",
+    "qairt-headers 2.49.0-0ubuntu1~bpo24.04.2",
+    "qairt-libs 2.49.0-0ubuntu1~bpo24.04.2",
+    "qairt-tools 2.49.0-0ubuntu1~bpo24.04.2"
+  ],
+  "xnnpack": {
+    "max_abs": 2.9802322387695312e-08,
+    "mean_abs": 1.4156103134155273e-08,
+    "cosine": 0.9999999999913145,
+    "ms": 0.4302596
+  },
+  "qnn_delegation": {
+    "delegates": [
+      "QnnBackend"
+    ],
+    "cpu_ops": [],
+    "num_cpu_op_calls": 0
+  },
+  "qnn": {
+    "max_abs": 0.0007713362574577332,
+    "mean_abs": 0.00038316668942570684,
+    "cosine": 0.9999924001548723,
+    "ms": 5.993,
+    "soc": "QCS8275"
+  }
+}

@@ -1,0 +1,226 @@
+{
+  "quant": "16a8w",
+  "models": {
+    "mp_palm_detector": {
+      "xnnpack": {
+        "pte": "mp_palm_detector_xnnpack_fp32.pte",
+        "size_MB": 7.1,
+        "vs_pytorch": [
+          {
+            "cosine": [
+              1.0,
+              1.0
+            ],
+            "max_abs": [
+              7.6e-05,
+              0.000214
+            ],
+            "mean_abs": [
+              4e-06,
+              1.1e-05
+            ]
+          },
+          {
+            "cosine": [
+              1.0,
+              1.0
+            ],
+            "max_abs": [
+              9.2e-05,
+              0.000214
+            ],
+            "mean_abs": [
+              4e-06,
+              1.1e-05
+            ]
+          }
+        ],
+        "latency_ms": 115.82
+      },
+      "qnn": {
+        "pte": "mp_palm_detector_qnn_16a8w.pte",
+        "size_MB": 2.29,
+        "delegation": {
+          "delegates": [
+            "QnnBackend"
+          ],
+          "cpu_ops": [],
+          "num_cpu_op_calls": 0
+        },
+        "vs_pytorch": [
+          {
+            "cosine": [
+              0.999852,
+              0.999944
+            ],
+            "max_abs": [
+              2.456924,
+              9.607269
+            ],
+            "mean_abs": [
+              0.245803,
+              0.621689
+            ]
+          },
+          {
+            "cosine": [
+              0.999903,
+              0.99997
+            ],
+            "max_abs": [
+              2.152992,
+              7.100983
+            ],
+            "mean_abs": [
+              0.202563,
+              0.439965
+            ]
+          }
+        ],
+        "latency_ms": 1.416
+      }
+    },
+    "mp_hand_landmark": {
+      "xnnpack": {
+        "pte": "mp_hand_landmark_xnnpack_fp32.pte",
+        "size_MB": 8.1,
+        "vs_pytorch": [
+          {
+            "cosine": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "max_abs": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "mean_abs": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ],
+        "latency_ms": 75.021
+      },
+      "qnn": {
+        "pte": "mp_hand_landmark_qnn_16a8w.pte",
+        "size_MB": 3.37,
+        "delegation": {
+          "delegates": [
+            "QnnBackend"
+          ],
+          "cpu_ops": [],
+          "num_cpu_op_calls": 0
+        },
+        "vs_pytorch": [
+          {
+            "cosine": [
+              1.0,
+              1.0,
+              0.999993
+            ],
+            "max_abs": [
+              3e-05,
+              0.013124,
+              0.004652
+            ],
+            "mean_abs": [
+              3e-05,
+              0.013124,
+              0.001185
+            ]
+          }
+        ],
+        "latency_ms": 1.389
+      }
+    },
+    "rtmpose_hand": {
+      "xnnpack": {
+        "pte": "rtmpose_hand_xnnpack_fp32.pte",
+        "size_MB": 55.13,
+        "vs_pytorch": [
+          {
+            "cosine": [
+              1.0,
+              1.0
+            ],
+            "max_abs": [
+              5e-06,
+              4e-06
+            ],
+            "mean_abs": [
+              1e-06,
+              1e-06
+            ]
+          }
+        ],
+        "latency_ms": 88.445
+      },
+      "qnn": {
+        "pte": "rtmpose_hand_qnn_16a8w.pte",
+        "size_MB": 14.88,
+        "delegation": {
+          "delegates": [
+            "QnnBackend"
+          ],
+          "cpu_ops": [],
+          "num_cpu_op_calls": 0
+        },
+        "vs_pytorch": [
+          {
+            "cosine": [
+              0.999349,
+              0.999454
+            ],
+            "max_abs": [
+              0.044926,
+              0.032127
+            ],
+            "mean_abs": [
+              0.0059,
+              0.005643
+            ]
+          }
+        ],
+        "latency_ms": 6.164
+      }
+    }
+  },
+  "pipeline": {
+    "xnnpack": {
+      "hands": [
+        {
+          "hand": "right",
+          "palm_score": 0.9555,
+          "hand_flag": 1.0
+        },
+        {
+          "hand": "left",
+          "palm_score": 0.9503,
+          "hand_flag": 1.0
+        }
+      ],
+      "mediapipe_kpt_err_px_vs_torch": 0.001,
+      "rtmpose_kpt_err_px_vs_torch": 0.0
+    },
+    "qnn": {
+      "hands": [
+        {
+          "hand": "right",
+          "palm_score": 0.9608,
+          "hand_flag": 1.0
+        },
+        {
+          "hand": "left",
+          "palm_score": 0.9143,
+          "hand_flag": 1.0
+        }
+      ],
+      "mediapipe_kpt_err_px_vs_torch": 0.453,
+      "rtmpose_kpt_err_px_vs_torch": 0.469
+    }
+  }
+}
