@@ -61,7 +61,8 @@ keypoints. 👍 turns the lights **on** and 👎 turns them **off** when combine
 **How it's recognized (no training data needed):** a fist with at least 3 of 4 fingers curled and none pointing
 out, plus a straight, long thumb within 60° of vertical whose tip is clearly beyond the knuckles and wrist. A
 gesture triggers after 5 of 10 frames (~0.3 s), stays active for 3 seconds, then resets
-(see [`gestures.py`](device/handpose/gestures.py)).
+(see [`gestures.py`](device/handpose/gestures.py)). Full details of the models, algorithms and packages:
+[Hand gesture detection](Documentation/architecture1.md).
 
 ---
 
@@ -131,6 +132,7 @@ model export, deploying changes, tests, troubleshooting and the HTTP API.
 |---|---|
 | [Getting Started](Documentation/GETTING_STARTED.md) | Setup, usage, deployment, tests, troubleshooting |
 | [Architecture](Documentation/architecture.md) | Components, flow diagrams, models, NPU usage, PyTorch / ExecuTorch, packages |
+| [Hand gesture detection](Documentation/architecture1.md) | Gesture models, tracking and 👍 / 👎 algorithms, NPU runtime, libraries, packages and Arduino tools used |
 | [Architecture diagram (PDF)](Documentation/architecture_diagram.pdf) · [SVG](Documentation/architecture_diagram.svg) | One-page system diagram |
 
 ---
