@@ -33,6 +33,38 @@ TV is off shows a "TV is off" message.
 
 ---
 
+## Thumbs up 👍 and thumbs down 👎 gesture recognition
+
+Live screenshots from the dashboard. The hand skeleton (21 keypoints) is computed on the VENTUNO Q's
+**Hexagon NPU** at ~30 fps (13–21 ms per frame, shown top right), and the thumb gesture is recognized from the 3D
+keypoints. 👍 turns the lights **on** and 👎 turns them **off** when combined with "Hey Ardy, light".
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="Documentation/gestures/thumbs-up-1.jpg" alt="Thumbs up recognized with hand skeleton"><br>
+      <b>👍 Thumbs up</b>: thumb (red) straight up, fingers curled
+    </td>
+    <td align="center" width="50%">
+      <img src="Documentation/gestures/thumbs-up-2.jpg" alt="Thumbs up, side view"><br>
+      <b>👍 Thumbs up</b>: side view, works anywhere in the frame
+    </td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2">
+      <img src="Documentation/gestures/thumbs-down-1.jpg" alt="Thumbs down recognized with hand skeleton" width="60%"><br>
+      <b>👎 Thumbs down</b>: same rules with the thumb pointing down; switching 👍 ↔ 👎 updates instantly
+    </td>
+  </tr>
+</table>
+
+**How it's recognized (no training data needed):** a fist with at least 3 of 4 fingers curled and none pointing
+out, plus a straight, long thumb within 60° of vertical whose tip is clearly beyond the knuckles and wrist. A
+gesture triggers after 5 of 10 frames (~0.3 s), stays active for 3 seconds, then resets
+(see [`gestures.py`](device/handpose/gestures.py)).
+
+---
+
 ## How it works
 
 | Component | Role |
