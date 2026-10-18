@@ -10,6 +10,17 @@ Hey Ardy runs a smart-home controller for **lighting, temperature and TV** on an
 Built for the ExecuTorch Hackathon SF 2026, with mobility and accessibility in mind: people who can't easily reach
 switches or remotes can control their home with a short phrase, a thumb gesture, or both.
 
+## ▶️ Demo video
+
+<p align="center">
+  <a href="https://youtu.be/NGFoLZw3lUw">
+    <img src="https://img.youtube.com/vi/NGFoLZw3lUw/maxresdefault.jpg" width="720"
+         alt="Arduino VENTUNO Q Mobility Home — demo video on YouTube">
+  </a>
+  <br>
+  <b><a href="https://youtu.be/NGFoLZw3lUw">Watch the live demo on YouTube</a></b>
+</p>
+
 ![Hey Ardy architecture](Documentation/architecture_diagram.png)
 
 ---
