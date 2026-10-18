@@ -19,9 +19,8 @@ switches or remotes can control their home with a short phrase, a thumb gesture,
 | | Feature | How to use it |
 |---|---|---|
 | 💡 | **Lighting** | "Hey Arduino, turn on the light", "lights 40 percent", "dim the lights", or **"Hey Arduino, light" + 👍 / 👎** |
-| 🌡️ | **Temperature (°F)** | "Hey Arduino, set the temperature to 72", "warmer", "cooler", "set the temperature to 22 celsius" (converted) |
+| 🌡️ | **Temperature (°F)** | "Hey Arduino, set the temperature to 72", "warmer", "cooler", "set the temperature to 22 celsius" (converted) 
 | 📺 | **TV with 3 live channels** | "Hey Arduino, turn on the TV", "channel 2", "comedy", "sci fi", "action", "next channel", "volume 20" |
-| ✋ | **Hand tracking** | 21-point skeleton for up to 2 hands, ~30 fps, drawn live over the camera view |
 | 👍 👎 | **Gesture recognition** | Thumbs up / thumbs down, any hand position, loose or tight fist, instant up ↔ down switching, 3 s hold |
 | 🗣️ + ✋ | **Voice + gesture together** | Say "light" and show a thumb within 3 seconds (in either order) to switch the lights on or off |
 | 🎙️ | **Two wake phrases** | "Hey Arduino" or "Hey Ardy" |
