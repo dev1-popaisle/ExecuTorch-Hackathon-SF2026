@@ -100,11 +100,6 @@ recognition on the NPU → offline command parser → home server. Based on Ardu
 [VENTUNO Q Local AI Assistant](https://docs.arduino.cc/tutorials/ventuno-q/local-ai-assistant/) tutorial, without
 the LLM and text-to-speech.
 
-<p align="center">
-  <img src="results/step2/two_hands_qnn_mediapipe.jpg" width="420" alt="Two hands tracked on the NPU">
-  <br><em>Two hands tracked by the exported models running on the Hexagon NPU</em>
-</p>
-
 ---
 
 ## Getting started
